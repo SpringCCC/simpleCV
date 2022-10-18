@@ -77,7 +77,7 @@ class Trainner:
                         conf_noobj_loss += (p_conf1**2 + p_conf2**2)
         loss = conf_noobj_loss * self.conf_c_noobj + pos_loss * self.pos_c + cls_loss * self.cls_c + conf_loss * self.conf_c
         loss /= float(n)
-        print("loss:", loss)
+        # print("loss:", loss)
         return loss
 
 

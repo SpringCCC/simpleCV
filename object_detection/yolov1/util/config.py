@@ -5,7 +5,9 @@ class Config:
     bs = 48
     env = "1017"
     cuda = 1
-    dataset_dir = r"/fastdata/computervision/huangwei/data/public_dataset/VOC2007/voc2012_forYolov1/"  #r"E:\ImageData\VOCdevkit\VOC2007\voc2012_forYolov1"
+    dataset_dir1s = r"/fastdata/computervision/huangwei/data/public_dataset/VOC2007/voc2012_forYolov1/"  #r"E:\ImageData\VOCdevkit\VOC2007\voc2012_forYolov1"
+    dataset_dir = r"E:\ImageData\VOCdevkit\VOC2007\voc2012_forYolov1"
+    #r""
     out_c = 30
     grid_x = 7
     grid_y = 7
@@ -13,6 +15,9 @@ class Config:
     lr = 1e-4
     wd = 1e-4
     epochs = 100
+    GL_CLASSES = ['person', 'bird', 'cat', 'cow', 'dog', 'horse', 'sheep',
+                  'aeroplane', 'bicycle', 'boat', 'bus', 'car', 'motorbike', 'train',
+                  'bottle', 'chair', 'diningtable', 'pottedplant', 'sofa', 'tvmonitor']
 
     def _update_params(self, kwargs: dict):
         print("Update params")

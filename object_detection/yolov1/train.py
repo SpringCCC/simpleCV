@@ -33,11 +33,11 @@ def train(**kwargs):
         model.train()
         for img, label in tqdm(train_dataloader):
             img, label = img.cuda().float(), label.cuda().float()
-            label = label.reshape(-1, opt.grid_x, opt.grid_y, opt.out_c)
-            label = label.permute(0, 3, 1, 2)  # (n c h w)
-            trainner.train_step(img, label)
-
-
+            # label = label.reshape(-1, opt.grid_x, opt.grid_y, opt.out_c)
+            # label = label.permute(0, 3, 1, 2)  # (n c h w)
+            # trainner.train_step(img, label)
+            img0 = img[0]
+            model.predict(img0[None])
 
         # vt.vis_images()
 

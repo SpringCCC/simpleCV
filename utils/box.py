@@ -34,7 +34,15 @@ def calc_iou_single(box1, box2):
     return iou
 
 def calc_ious_multi(boxes1, boxes2):
-    pass
+    n, m = len(boxes1), len(boxes2)
+    b1, b2 = boxes1.reshape(n, 1, -1), boxes1.reshape(1, m, -1)
+    tl = np.maximum(b1[:, :, :2], b2[:, :, :2])
+    br = np.minimum(b1[:, :, 2:], b2[:, :, 2:])
+    inter = np.prod(br - tl, axis=-1) * np.all(br>tl, axis=-1)
+    area1 = np.prod(boxes1[:, 2:] - boxes1[:, :2], axis=-1).reshape(n, 1)
+    area2 = np.prod(boxes2[:, 2:] - boxes2[:, :2], axis=-1).reshape(1, m)
+    iou = inter / (area1 + area2 - inter)
+    return iou
 
 
 if __name__ == '__main__':

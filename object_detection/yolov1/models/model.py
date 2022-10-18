@@ -3,12 +3,14 @@ import torch.nn as nn
 from torchvision.models import resnet34
 from utils.block.CBR import CBR
 from utils.box import *
-
+from utils.datatype import *
+from object_detection.yolov1.util.config import Config
 
 class MyNet_resnet34(nn.Module):
 
-    def __init__(self):
+    def __init__(self, opt: Config):
         super(MyNet_resnet34, self).__init__()
+        self.opt = opt
         backbone = resnet34(pretrained=True)
         self.in_channel = backbone.fc.in_features
         self.backbone = nn.Sequential(*list(backbone.children())[:-2]) #去掉resnet最后两层(分类头)，原始是用于分类
@@ -32,5 +34,98 @@ class MyNet_resnet34(nn.Module):
         return out
 
 
-    def predict(self):
-        pass
+# 在自己复现一个经典目标检测项目，练手用
+    #   总是记不住stack和concat的用法
+    # stack增加一个维度
+    # concate 不增加维度
+    def predict(self, x):
+        """
+        :param x: 默认是已经处理好了，可以直接使用模型预测的图像
+        :return:
+        """
+        self.eval()
+        with torch.no_grad():
+            predict = self.forward(x)
+            predict = predict[0]
+        c, h, w = predict.shape
+        predict = predict.permute(1, 2, 0) # hwc
+        predict = toNumpy(predict)
+        predict =  self._reverse_pos(predict)
+        predict = predict.reshape(-1, c)
+        boxes = predict[:, :10].reshape(-1, 5) # (98, 5)x,y,w,h,conf
+        boxes[:, :4] = boxes[:, :4].clip(0,1)
+        cls = predict[:, 10:] # (49, 20)
+        cls = cls.argmax(axis=1) #(49, )
+        cls = cls.repeat(2) # #(98, )
+        boxes = np.concatenate([boxes, cls], axis=-1) # x, y, w, h, score, cls
+        keep = self.nms_multi_cls(boxes)
+        # keep_boxes = boxes[keep]
+
+    def _reverse_pos(self, predict):
+        """
+        :param predict: hwc c:30
+        :return:
+        """
+        predict = toNumpy(predict)
+        h, w, c = predict.shape
+        for i in range(h):
+            for j in range(w):
+                predict[i, j, :4] = convert_xywh2x1y1x2y2(self._convert_xywh2xywh(predict[i, j, :4], i, j, h, w))
+                predict[i, j, 5:9] = convert_xywh2x1y1x2y2(self._convert_xywh2xywh(predict[i, j, 5:9], i, j, h, w))
+        return predict
+
+
+    def _convert_xywh2xywh(self, box, y, x, grid_y, grid_x):
+        # 还原xywh的在图像中的真实值
+        cx = (box[0] + x) / float(grid_x)
+        cy = (box[1] + y) / float(grid_y)
+        w = box[2]
+        h = box[3]
+        return [cx, cy, w, h]
+
+    def nms_multi_cls(self, predict, nms_thresh=0.1):
+        # x1, y1, x2, y2, score, cls
+        cls = predict[:, -1]
+        score = predict[:, -2]
+        boxes = predict[:, :4]
+        keeps =[]
+        for i in range(self.opt.n_cls):
+            index_i = np.where(cls==i)[0]
+            box_i = boxes[index_i]
+            score_i = score[index_i]
+            keep_i = self.nms_single_cls(box_i, score_i, nms_thresh)
+            keeps.extend(index_i[keep_i])
+
+    def nms_single_cls(self, box_i, score_i, nms_thresh=0.1):
+        keep = []
+        sort_index = np.argsort(score_i)[::-1]
+        box = box_i[sort_index]
+        while len(box) > 0:
+            keep.append(sort_index[0])
+            box0 = box[0].reshape(1, -1)
+            iou = calc_ious_multi(box0, box).flatten()
+            sort_index = sort_index[np.where(iou<nms_thresh)[0]]
+            box = box_i[sort_index]
+        return keep
+
+
+
+
+
+#
+if __name__ == '__main__':
+    p = r"C:\Users\HuangWei\Desktop\新建文件夹\a.pth"
+    a = torch.load(p)
+    model = MyNet_resnet34()
+    predict = model._reverse_pos(a)
+    predict = predict.reshape(-1, 30)
+    boxes = predict[:, :10].reshape(-1, 5)  # (98, 5)x,y,w,h,conf
+    boxes[:, :4] = boxes[:, :4].clip(0, 1)
+    cls = predict[:, 10:]  # (49, 20)
+    cls = cls.argmax(axis=1)  # (49, )
+    cls = cls.repeat(2)  # #(98, )
+    boxes = np.concatenate([boxes, cls.reshape(-1, 1)], axis=-1)  # x, y, w, h, score, cls
+    a = 1
+
+
+
