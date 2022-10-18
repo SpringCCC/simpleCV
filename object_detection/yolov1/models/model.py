@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 from torchvision.models import resnet34
-from utils.layers.CBR import CBR
+from utils.block.CBR import CBR
+from utils.box import *
 
 
 class MyNet_resnet34(nn.Module):
@@ -33,10 +34,3 @@ class MyNet_resnet34(nn.Module):
 
     def predict(self):
         pass
-
-
-if __name__ == '__main__':
-    net = MyNet_resnet34()
-    x = torch.randn((4,3, 448, 448))
-    a = net(x) # (4, 512, 14, 14)
-    b = 21

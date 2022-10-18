@@ -1,6 +1,7 @@
 from visdom import Visdom
 import cv2
-from .datatype import *
+from utils.datatype import *
+
 class Vis():
 
     def __init__(self, opt):

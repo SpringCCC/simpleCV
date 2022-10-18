@@ -2,16 +2,16 @@ from pprint import pprint
 
 class Config:
 
-    bs = 4
+    bs = 48
     env = "1017"
     cuda = 1
-    dataset_dir = r"E:\ImageData\VOCdevkit\VOC2007\voc2012_forYolov1"
+    dataset_dir = r"/fastdata/computervision/huangwei/data/public_dataset/VOC2007/voc2012_forYolov1/"  #r"E:\ImageData\VOCdevkit\VOC2007\voc2012_forYolov1"
     out_c = 30
     grid_x = 7
     grid_y = 7
     n_cls = 20
-    lr = 1e-3
-    wd = 0
+    lr = 1e-4
+    wd = 1e-4
     epochs = 100
 
     def _update_params(self, kwargs: dict):

@@ -1,15 +1,17 @@
 import sys
-sys.path.append("...")
+import os
+project = 'simpleCV'
+sys.path.append(os.getcwd().split(project)[0]+project)
 from utils.vis import Vis
 from fire import Fire
-from .data.dataset import MyDataset
-from .util.config import opt
+from object_detection.yolov1.data.dataset import MyDataset
+from object_detection.yolov1.util.config import opt
 from torch.utils.data import DataLoader
-from .models.model import MyNet_resnet34 as mymodel
+from object_detection.yolov1.models.model import MyNet_resnet34 as mymodel
+from object_detection.yolov1.trainner import Trainner
 from torch.optim import Adam
-import torch.nn as nn
 from tqdm import tqdm
-
+import torch
 
 
 def train(**kwargs):
@@ -24,24 +26,20 @@ def train(**kwargs):
     model = mymodel()
     model.cuda()
     vt = Vis(opt)
-    # prepare train
-    optimizer = Adam(model.parameters(), lr=opt.lr, weight_decay=opt.wd)
-    criterion_mse = nn.MSELoss()
 
     # train
-    for epoch in enumerate(tqdm(opt.epochs)):
-        for img, label in enumerate(train_dataloader):
-            n = label.shape[0]
+    trainner = Trainner(model, opt)
+    for epoch in tqdm(range(opt.epochs)):
+        model.train()
+        for img, label in tqdm(train_dataloader):
             img, label = img.cuda().float(), label.cuda().float()
-            label = label.reshape(n, opt.grid_x, opt.grid_y, opt.out_c)
-            label = label.permute(0, 3, 1, 2) # (n c h w)
-            out = model(img) # (n c h w) as (n, 30, 7, 7)
-            loss = calc_loss(out, label, criterion_mse)
-            optimizer.zero_grad()
-            loss.backeard()
-            optimizer.step()
+            label = label.reshape(-1, opt.grid_x, opt.grid_y, opt.out_c)
+            label = label.permute(0, 3, 1, 2)  # (n c h w)
+            trainner.train_step(img, label)
 
-        vt.vis_images()
+
+
+        # vt.vis_images()
 
 
     # val&save
@@ -49,10 +47,9 @@ def train(**kwargs):
     # vis
 
 
-    pass
 
 
-def calc_loss(predict, label, criterion_mse):
+def calc_loss(predict, label):
     """
     :param out: (n c h w) c:(x y w h conf x y w h conf c1 c2 ...)
     :param label: follow predict
@@ -60,8 +57,17 @@ def calc_loss(predict, label, criterion_mse):
     :return:
     """
 
+def check_fuc(trainner: Trainner, model):
+
+    x = torch.rand(5,3,448,448)
+    a = model(x)
+    labels = torch.zeros(5, 30, 7, 7)
+    loss = trainner.calculate_loss(a, labels)
+    print(loss)
+    print(a.shape)
 
 
 if __name__ == '__main__':
     # Fire()
     train()
+
