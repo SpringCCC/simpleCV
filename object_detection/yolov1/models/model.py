@@ -95,37 +95,43 @@ class MyNet_resnet34(nn.Module):
             score_i = score[index_i]
             keep_i = self.nms_single_cls(box_i, score_i, nms_thresh)
             keeps.extend(index_i[keep_i])
+        return keeps
 
     def nms_single_cls(self, box_i, score_i, nms_thresh=0.1):
-        keep = []
-        sort_index = np.argsort(score_i)[::-1]
-        box = box_i[sort_index]
-        while len(box) > 0:
-            keep.append(sort_index[0])
-            box0 = box[0].reshape(1, -1)
-            iou = calc_ious_multi(box0, box).flatten()
-            sort_index = sort_index[np.where(iou<nms_thresh)[0]]
-            box = box_i[sort_index]
-        return keep
-
-
+        keeps = []
+        order = np.argsort(score_i)[::-1]
+        while len(order) > 0:
+            keeps.append(order[0])
+            box0 = box_i[order[0]].reshape(1, -1)
+            box_all = box_i[order]
+            iou = calc_ious_multi(box0, box_all).flatten()
+            iou1 = bbox_iou(box0, box_all).flatten()
+            keep = np.where(iou<nms_thresh)[0]
+            order = order[keep]
+        return keeps
 
 
 
 #
 if __name__ == '__main__':
-    p = r"C:\Users\HuangWei\Desktop\新建文件夹\a.pth"
-    a = torch.load(p)
-    model = MyNet_resnet34()
-    predict = model._reverse_pos(a)
-    predict = predict.reshape(-1, 30)
-    boxes = predict[:, :10].reshape(-1, 5)  # (98, 5)x,y,w,h,conf
-    boxes[:, :4] = boxes[:, :4].clip(0, 1)
-    cls = predict[:, 10:]  # (49, 20)
-    cls = cls.argmax(axis=1)  # (49, )
-    cls = cls.repeat(2)  # #(98, )
-    boxes = np.concatenate([boxes, cls.reshape(-1, 1)], axis=-1)  # x, y, w, h, score, cls
-    a = 1
+    # p = r"C:\Users\HuangWei\Desktop\新建文件夹\a.pth"
+    p = r"/fastdata/computervision/huangwei/codes/others/a.pth"
+    predict = torch.load(p)
+    model = MyNet_resnet34(Config())
+
+    predict = predict[0]
+    c, h, w = predict.shape
+    predict = predict.permute(1, 2, 0) # hwc
+    predict = toNumpy(predict)
+    predict =  model._reverse_pos(predict)
+    predict = predict.reshape(-1, c)
+    boxes = predict[:, :10].reshape(-1, 5) # (98, 5)x,y,w,h,conf
+    boxes[:, :4] = boxes[:, :4].clip(0,1)
+    cls = predict[:, 10:] # (49, 20)
+    cls = cls.argmax(axis=1) #(49, )
+    cls = cls.repeat(2) # #(98, )
+    boxes = np.concatenate([boxes, cls.reshape(-1, 1)], axis=-1) # x, y, w, h, score, cls
+    keep = model.nms_multi_cls(boxes)
 
 
 

@@ -35,7 +35,7 @@ def calc_iou_single(box1, box2):
 
 def calc_ious_multi(boxes1, boxes2):
     n, m = len(boxes1), len(boxes2)
-    b1, b2 = boxes1.reshape(n, 1, -1), boxes1.reshape(1, m, -1)
+    b1, b2 = boxes1.reshape(n, 1, -1), boxes2.reshape(1, m, -1)
     tl = np.maximum(b1[:, :, :2], b2[:, :, :2])
     br = np.minimum(b1[:, :, 2:], b2[:, :, 2:])
     inter = np.prod(br - tl, axis=-1) * np.all(br>tl, axis=-1)
@@ -44,9 +44,24 @@ def calc_ious_multi(boxes1, boxes2):
     iou = inter / (area1 + area2 - inter)
     return iou
 
+def bbox_iou(bbox_a, bbox_b):
+
+    if bbox_a.shape[1] != 4 or bbox_b.shape[1] != 4:
+        raise IndexError
+
+    # top left
+    tl = np.maximum(bbox_a[:, None, :2], bbox_b[:, :2])
+    # bottom right
+    br = np.minimum(bbox_a[:, None, 2:], bbox_b[:, 2:])
+
+    area_i = np.prod(br - tl, axis=2) * (tl < br).all(axis=2)
+    area_a = np.prod(bbox_a[:, 2:] - bbox_a[:, :2], axis=1)
+    area_b = np.prod(bbox_b[:, 2:] - bbox_b[:, :2], axis=1)
+    return area_i / (area_a[:, None] + area_b - area_i)
 
 if __name__ == '__main__':
     b1 = torch.from_numpy(np.asarray([0,0, 5, 5])).cuda()
     b2 = torch.from_numpy(np.asarray([2,2, 10, 10])).cuda()
     iou = calc_iou_single(b1, b2)
+    iou2 = bbox_iou(b1, b2)
     print(iou)
