@@ -58,8 +58,8 @@ class Trainner:
                         box_ = convert_xywh2x1y1x2y2(self._convert_xywh2xywh(box, i, j))
                         p_box1_ = convert_xywh2x1y1x2y2(self._convert_xywh2xywh(p_box1, i, j))
                         p_box2_ = convert_xywh2x1y1x2y2(self._convert_xywh2xywh(p_box2, i, j))
-                        iou1 = calc_iou_single(p_box1_, box_)
-                        iou2 = calc_iou_single(p_box2_, box_)
+                        iou1 = bbox_iou(p_box1_, box_)
+                        iou2 = bbox_iou(p_box2_, box_)
                         cls_loss += torch.sum((latent[-self.opt.n_cls:] - label[-self.opt.n_cls:])**2)
 
                         if iou1 > iou2:

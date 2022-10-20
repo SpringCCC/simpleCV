@@ -16,7 +16,7 @@ def convert_xywh2x1y1x2y2(box):
 
 
 
-def calc_iou_single(box1, box2):
+def bbox_iou(box1, box2):
     """
     :param box1: x1,y1,x2,y2
     :param box2: x1,y1,x2,y2
@@ -33,7 +33,12 @@ def calc_iou_single(box1, box2):
     iou = inter / (area1+area2-inter)
     return iou
 
-def calc_ious_multi(boxes1, boxes2):
+def bboxes_iou(boxes1, boxes2):
+    """
+    :param boxes1: (N,4)
+    :param boxes2: (M,4)
+    :return: (N,M)
+    """
     n, m = len(boxes1), len(boxes2)
     b1, b2 = boxes1.reshape(n, 1, -1), boxes2.reshape(1, m, -1)
     tl = np.maximum(b1[:, :, :2], b2[:, :, :2])
@@ -41,27 +46,13 @@ def calc_ious_multi(boxes1, boxes2):
     inter = np.prod(br - tl, axis=-1) * np.all(br>tl, axis=-1)
     area1 = np.prod(boxes1[:, 2:] - boxes1[:, :2], axis=-1).reshape(n, 1)
     area2 = np.prod(boxes2[:, 2:] - boxes2[:, :2], axis=-1).reshape(1, m)
-    iou = inter / (area1 + area2 - inter)
+    iou = inter / (area1 + area2 - inter + 1e-12)
     return iou
 
-def bbox_iou(bbox_a, bbox_b):
-
-    if bbox_a.shape[1] != 4 or bbox_b.shape[1] != 4:
-        raise IndexError
-
-    # top left
-    tl = np.maximum(bbox_a[:, None, :2], bbox_b[:, :2])
-    # bottom right
-    br = np.minimum(bbox_a[:, None, 2:], bbox_b[:, 2:])
-
-    area_i = np.prod(br - tl, axis=2) * (tl < br).all(axis=2)
-    area_a = np.prod(bbox_a[:, 2:] - bbox_a[:, :2], axis=1)
-    area_b = np.prod(bbox_b[:, 2:] - bbox_b[:, :2], axis=1)
-    return area_i / (area_a[:, None] + area_b - area_i)
 
 if __name__ == '__main__':
     b1 = torch.from_numpy(np.asarray([0,0, 5, 5])).cuda()
     b2 = torch.from_numpy(np.asarray([2,2, 10, 10])).cuda()
-    iou = calc_iou_single(b1, b2)
+    iou = bbox_iou(b1, b2)
     iou2 = bbox_iou(b1, b2)
     print(iou)

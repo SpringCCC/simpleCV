@@ -1,3 +1,4 @@
+from utils.nms import nms_multi_cls
 import torch
 import torch.nn as nn
 from torchvision.models import resnet34
@@ -5,6 +6,9 @@ from utils.block.CBR import CBR
 from utils.box import *
 from utils.datatype import *
 from object_detection.yolov1.util.config import Config
+from torchvision.ops import nms
+
+
 
 class MyNet_resnet34(nn.Module):
 
@@ -58,7 +62,7 @@ class MyNet_resnet34(nn.Module):
         cls = cls.argmax(axis=1) #(49, )
         cls = cls.repeat(2) # #(98, )
         boxes = np.concatenate([boxes, cls], axis=-1) # x, y, w, h, score, cls
-        keep = self.nms_multi_cls(boxes)
+        keep = nms_multi_cls(boxes)
         # keep_boxes = boxes[keep]
 
     def _reverse_pos(self, predict):
@@ -83,33 +87,6 @@ class MyNet_resnet34(nn.Module):
         h = box[3]
         return [cx, cy, w, h]
 
-    def nms_multi_cls(self, predict, nms_thresh=0.1):
-        # x1, y1, x2, y2, score, cls
-        cls = predict[:, -1]
-        score = predict[:, -2]
-        boxes = predict[:, :4]
-        keeps =[]
-        for i in range(self.opt.n_cls):
-            index_i = np.where(cls==i)[0]
-            box_i = boxes[index_i]
-            score_i = score[index_i]
-            keep_i = self.nms_single_cls(box_i, score_i, nms_thresh)
-            keeps.extend(index_i[keep_i])
-        return keeps
-
-    def nms_single_cls(self, box_i, score_i, nms_thresh=0.1):
-        keeps = []
-        order = np.argsort(score_i)[::-1]
-        while len(order) > 0:
-            keeps.append(order[0])
-            box0 = box_i[order[0]].reshape(1, -1)
-            box_all = box_i[order]
-            iou = calc_ious_multi(box0, box_all).flatten()
-            iou1 = bbox_iou(box0, box_all).flatten()
-            keep = np.where(iou<nms_thresh)[0]
-            order = order[keep]
-        return keeps
-
 
 
 #
@@ -131,7 +108,8 @@ if __name__ == '__main__':
     cls = cls.argmax(axis=1) #(49, )
     cls = cls.repeat(2) # #(98, )
     boxes = np.concatenate([boxes, cls.reshape(-1, 1)], axis=-1) # x, y, w, h, score, cls
-    keep = model.nms_multi_cls(boxes)
+    keep = nms_multi_cls(boxes, 20)
+    a  = 1
 
 
 
