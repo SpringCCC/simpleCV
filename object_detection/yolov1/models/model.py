@@ -52,24 +52,25 @@ class MyNet_resnet34(nn.Module):
             predict = self.forward(x)
             predict = predict[0]
         c, h, w = predict.shape
-        predict = predict.permute(1, 2, 0) # hwc
-        predict = toNumpy(predict)
         predict =  self._reverse_pos(predict)
         predict = predict.reshape(-1, c)
-        boxes = predict[:, :10].reshape(-1, 5) # (98, 5)x,y,w,h,conf
-        boxes[:, :4] = boxes[:, :4].clip(0,1)
+        dets = predict[:, :10].reshape(-1, 5) # (98, 5)x,y,w,h,conf
+        dets[:, :4] = dets[:, :4].clip(0,1)
         cls = predict[:, 10:] # (49, 20)
         cls = cls.argmax(axis=1) #(49, )
-        cls = cls.repeat(2) # #(98, )
-        boxes = np.concatenate([boxes, cls], axis=-1) # x, y, w, h, score, cls
-        keep = nms_multi_cls(boxes)
-        # keep_boxes = boxes[keep]
+        cls = cls.repeat(2).reshape(-1, 1) # #(98, )
+        dets = np.concatenate([dets, cls], axis=-1) # x1, y1, x2, y2, score, cls
+        keep = nms_multi_cls(dets, self.opt.n_cls, self.opt.nms_thresh)
+        dets = dets[keep]
+        self.train()
+        return dets
 
     def _reverse_pos(self, predict):
         """
-        :param predict: hwc c:30
-        :return:
+        :param predict: chw c:30
+        :return: x1, y1, x2, y2
         """
+        predict = predict.permute(1, 2, 0)  # hwc
         predict = toNumpy(predict)
         h, w, c = predict.shape
         for i in range(h):

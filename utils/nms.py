@@ -20,17 +20,13 @@ def nms_multi_cls(dets, n_cls, thresh=0.1):
         index_i = np.where(cls==i)[0]
         box_i = boxes[index_i]
         score_i = confs[index_i]
-        t_box = torch.from_numpy(box_i)
-        t_score = torch.from_numpy(score_i)
-        k1 = nms(t_box, t_score, thresh)
         keep = nms_single_cls(box_i, score_i, thresh)
-        assert sum(abs(k1.numpy()-keep))==0
         keeps.extend(index_i[keep])
     return keeps
 
 def nms_single_cls(box, score, thresh):
-    keeps = []
     order = score.argsort()[::-1]
+    keeps = []
     while len(order) > 1:
         keeps.append(order[0])
         box_0 = box[order[0]].reshape(-1, 4)
@@ -39,6 +35,6 @@ def nms_single_cls(box, score, thresh):
         keep = np.where(iou < thresh)[0]
         keep += 1
         order = order[keep]
-    if len(order) == 1:
+    if len(order) > 0:
         keeps.append(order[0])
     return keeps

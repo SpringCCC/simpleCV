@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 import os
-
+import torch
+from utils.datatype import *
 """
 windows下安装opencv-python时出现问题
 解决办法：下载与python版本对应的opencv.whl文件
@@ -26,5 +27,14 @@ def save_img(sv_path, img, post="jpg"):
         cv2.imencode(".png", img)[1].tofile(sv_path)
     else:
         raise ValueError("check post value, only 'jpg' or 'png'")
+
+def reverse_ToTensor(img):
+    assert isinstance(img, torch.Tensor)
+    img = img.permute(1, 2, 0)
+    img = toNumpy(img)
+    img *= 255
+    img = img.clip(0, 255)
+    return img
+
 
 

@@ -21,5 +21,40 @@ class Vis():
         return x * std + mean
 
 
+    def _check_dets_boxv(self, img, boxes):
+        if len(boxes)==0:
+            return boxes
+        if (boxes<=1).all():
+            h, w, c = img.shape
+            boxes[:, ::2] *= w
+            boxes[:, 1::2] *= h
+        boxes = boxes.astype(np.int)
+        return boxes
+
+
+    def draw_objectdetect_rect(self, img, dets, cls_names=None):
+        if len(dets)==0:
+            return img
+        if len(dets[0])==6:
+            boxes, scores, clss = dets[:, :4], dets[:, 4], dets[:, 5]
+        elif len(dets[0])==5:
+            boxes, clss = dets[:, :4], dets[:, 4]
+        elif len(dets[0])==4:
+            boxes = dets[:, :4]
+        boxes = self._check_dets_boxv(img, boxes)
+        for box, score, cls in zip(boxes, scores, clss):
+            cv2.rectangle(img, tuple(box[:2]), tuple(box[2:]), (255, 0, 0))
+            if cls_names:
+                cv2.putText(img, cls_names[int(cls)], tuple(box[:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+        return img
+
+
+
+
+
+
+
+
+
 
 
