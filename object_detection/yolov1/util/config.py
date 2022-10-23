@@ -2,11 +2,11 @@ from pprint import pprint
 
 class Config:
 
-    bs = 12
+    bs = 48
     env = "1017"
     cuda = 1
-    dataset_dir = r"/fastdata/computervision/huangwei/data/public_dataset/VOC2007/voc2012_forYolov1/"  #r"E:\ImageData\VOCdevkit\VOC2007\voc2012_forYolov1"
-    dataset_dir1 = r"E:\ImageData\VOCdevkit\VOC2007\voc2012_forYolov1"
+    dataset_dir1 = r"/fastdata/computervision/huangwei/data/public_dataset/VOC2007/voc2012_forYolov1/"  #r"E:\ImageData\VOCdevkit\VOC2007\voc2012_forYolov1"
+    dataset_dir = r"E:\ImageData\VOCdevkit\VOC2007\voc2012_forYolov1"
     #r""
     out_c = 30
     grid_x = 7
@@ -15,7 +15,7 @@ class Config:
     lr = 1e-4
     wd = 1e-4
     epochs = 100
-    nms_thresh = 0.1
+    nms_thresh = 0.5
     vis_freq = 100
     win = "ori_det"
 

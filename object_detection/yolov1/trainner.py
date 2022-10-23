@@ -27,6 +27,7 @@ class Trainner:
     def train_step(self, img, label):
         out = self.model(img)  # (n c h w) as (n, 30, 7, 7)
         loss = self.calc_loss(out, label)
+        print("loss:", loss)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -50,9 +51,7 @@ class Trainner:
                     latent = predict[k, :, i, j] # 30
                     label = labels[k, :, i, j] # 30
                     p_box1, p_box2, box = latent[:4], latent[5:9], label[:4]
-
                     p_conf1, p_conf2, conf = latent[4], latent[9], label[4]
-
                     #obj
                     if conf == 1:
                         box_ = convert_xywh2x1y1x2y2(self._convert_xywh2xywh(box, i, j))
@@ -79,10 +78,6 @@ class Trainner:
         loss /= float(n)
         # print("loss:", loss)
         return loss
-
-
-
-
 
 if __name__ == '__main__':
     from object_detection.yolov1.util.config import opt

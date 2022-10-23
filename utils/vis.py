@@ -8,7 +8,11 @@ class Vis():
         self.vis = Visdom(env=opt.env, use_incoming_socket=False)
 
     def vis_images(self, imgs, win):
+        imgs = toTensor(imgs)
         assert len(imgs.shape) == 4
+        n, c, h, w = imgs.shape
+        if c>3:
+            imgs = imgs.permute(0,3,1,2)
         self.vis.images(imgs, win=win, opts=dict(title=win))
 
 
